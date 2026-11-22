@@ -1,0 +1,7 @@
+{
+  "addons.exampleaddon.names.modules.ExampleTicker": "Example Ticker",
+  "addons.exampleaddon.descriptions.modules.ExampleTicker": "Prints a chat message on an interval.",
+  "addons.exampleaddon.names.settings.Announce": "Announce",
+  "addons.exampleaddon.names.settings.Interval": "Interval",
+  "addons.exampleaddon.announce": "Example addon ticked."
+}

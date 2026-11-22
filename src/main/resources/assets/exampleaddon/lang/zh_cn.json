@@ -1,0 +1,7 @@
+{
+  "addons.exampleaddon.names.modules.ExampleTicker": "示例播报",
+  "addons.exampleaddon.descriptions.modules.ExampleTicker": "按间隔在聊天栏输出一条消息。",
+  "addons.exampleaddon.names.settings.Announce": "播报",
+  "addons.exampleaddon.names.settings.Interval": "间隔",
+  "addons.exampleaddon.announce": "示例插件 tick。"
+}

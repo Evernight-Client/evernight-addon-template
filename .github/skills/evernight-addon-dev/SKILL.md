@@ -68,6 +68,7 @@ Logger logger()                          // 前缀 Evernight/Addon/<id>
 EventBus eventBus()
 <T extends Module> T registerModule(T)   // 同时生成 ;<alias> 指令
 <T extends HudWidgetModule> T registerHudModule(T)
+ModuleCategory registerCategory(String name) // 注册插件分类，传给 AddonModule 构造器
 <T extends Command> T registerCommand(T)
 void registerConfig(JsonConfigurable)    // 额外 evernight/<name>.json
 void subscribe(Object) / unsubscribe(Object)
@@ -97,8 +98,8 @@ public final class ExampleModule extends AddonModule {
 }
 ```
 
-- `AddonModule` 自动解析 `addons.<id>.names.modules.*`、`addons.<id>.descriptions.modules.*` 与 `addons.<id>.names.settings.*`；缺键回退英文标识。不需要本地化时可直接继承 `Module`。
-- 分类只能复用 `ModuleCategory` 现有 8 个值，插件不能新增分类。
+- `AddonModule` 自动解析 `addons.<id>.names.modules.*`、`addons.<id>.descriptions.modules.*` 与 `addons.<id>.names.settings.*`；查找链为「当前语言 → 英文 → 完整键」，中文缺键回退英文，两份都缺才显示完整键。构造器的 `description` 参数仅为源码兼容保留，不再作为显示兜底。不需要本地化时可直接继承 `Module`。
+- 分类：内置分类（`ModuleCategory.COMBAT` … `HUD`）可直接复用；需要新分类时在 `onInitialize` 调用 `context.registerCategory("Example")`，把返回的 `ModuleCategory` 传给 `AddonModule` 构造器。分类只能在 `onInitialize` 注册，名字全局唯一（含内置分类、大小写不敏感），发布后不要改名；显示名写入两份语言表的 `addons.<id>.names.categories.<Name>`。
 - 设置链式方法返回 `Setting<T>`；先建变量再 `this.add(...)`，不要声明成 `NumberSetting`。
 - HUD 组件继承 `HudWidgetModule`、构造器里 `setRenderer(...)`，再用 `registerHudModule`。
 - 辅助对象订阅事件用 `context.subscribe(obj)`，关闭时自动退订；模块不要重复订阅。
@@ -106,7 +107,7 @@ public final class ExampleModule extends AddonModule {
 ## 6. 指令 / 语言 / 配置
 
 - 指令继承 `Command`，`exec(LiteralArgumentBuilder root)` 里 `root.executes(action)`；别名用 `setAliases(...)`。指令名不要和模块名/模块别名重复（模块会自动注册同名指令）。
-- 语言：`assets/<id>/lang/en_us.json` + `zh_cn.json`，所有键放 `addons.<id>.*`（**禁止** `evernight.` 前缀）；`AddonModule` 自动读取模块名/描述/设置标签，私有文案用 `Translations.get("addons.<id>.key")`。
+- 语言：`assets/<id>/lang/en_us.json` + `zh_cn.json`，所有键放 `addons.<id>.*`（**禁止** `evernight.` 前缀）；`AddonModule` 自动读取模块名/描述/设置标签，私有文案用 `Translations.get("addons.<id>.key")`。查找链为当前语言 → 英文 → 完整键：可以只提供 `en_us.json` 让中文界面回退英文，但推荐两份都写；两份都缺会显示完整键。
 - 改完语言表执行 `python scripts/check-lang.py`：校验 JSON、键集一致性、键前缀与占位符数量。
 - 模块状态自动进 `modules.json`，HUD 进 `hud.json`；额外状态实现 `JsonConfigurable` 后 `context.registerConfig(...)`，文件名带插件 id（参考 `ExampleConfig`）。
 - 关闭时不要自己反注册模块；只清理线程/连接/监听器。

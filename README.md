@@ -4,10 +4,11 @@
 
 Evernight 插件（Addon）模板：一个可以直接构建、加载的 Fabric 客户端模组，演示如何通过 `evernight-addon` 入口注册模块、指令、配置与语言表。
 
-- 目标版本：Evernight 1.0.1 · Minecraft 1.21.11 · Fabric Loader 0.20.1 · Java 21
+- 目标版本：Evernight 1.0.3 · Minecraft 1.21.11 · Fabric Loader 0.20.1 · Java 21
 - 构建工具：Gradle Wrapper 9.8.0 + Loom 1.18.4，运行 Gradle 需要 JDK 25
 - 模板自带：示例模块 + 示例指令 + 示例配置 + 中英语言表 + 语言表校验脚本 + GitHub Actions
 - 自带 agent skill（`.github/skills/evernight-addon-dev/`）与 `AGENTS.md`，让编码代理按插件约定工作
+- 示例演示注册**插件自定义分类**（`context.registerCategory("Example")`），模块落在 ClickGUI 的 Example（示例）分类
 
 ## 快速开始
 
@@ -31,7 +32,7 @@ gradlew.bat build
 | Minecraft | 1.21.11 |
 | Fabric Loader | 0.20.1（`fabric.mod.json` 声明 `>=0.20.1`） |
 | Fabric API | 0.141.6+1.21.11 |
-| Evernight | 1.0.1 或更高 |
+| Evernight | 1.0.3 或更高 |
 | 运行 Java | 21+ |
 | 构建 JDK | 25（Loom 1.18.4 的 Gradle JVM 要求） |
 
@@ -53,7 +54,7 @@ gradlew.bat build
 
 - `environment` 必须是 `client`，入口键必须是 `evernight-addon`，入口类继承 `evernight.addon.EvernightAddon`。
 - 模块名是全局键：`modules.json` 的配置键、预设键、`;<模块名>` 指令都由它生成，**发布后不要改名**，也不能与其他插件重名。
-- 玩家可见文本都放进 `assets/<id>/lang/{en_us,zh_cn}.json`，键用 `addons.<id>.*`；**不要用 `evernight.` 前缀**，那是本体保留命名空间。
+- 玩家可见文本都放进 `assets/<id>/lang/{en_us,zh_cn}.json`，键用 `addons.<id>.*`；**不要用 `evernight.` 前缀**，那是本体保留命名空间。查找链是「当前语言 → 英文 → 完整键」：中文缺键回退英文，两份都缺才显示完整键，Java 里不写死显示文本。
 - 所有注册都在 `onInitialize` 里完成，运行期不支持动态增删模块/指令。
 - 插件失败不会拖垮本体：`onInitialize` 抛异常时该插件被标记为 `FAILED`，已成功的注册保留。
 
@@ -106,7 +107,7 @@ python scripts/check-lang.py     # 语言表键集/前缀校验（CI 也会执�
 
 1. 把 `build/libs/example-addon-<version>.jar` 放进 Evernight 开发目录的 `run/mods/`（或正式游戏的 `.minecraft/mods/`）。
 2. 启动客户端，日志应出现 `Loaded addon Example Addon <version> (exampleaddon)`。
-3. 游戏内执行 `;addons` 查看已加载插件，`;exampleaddon` 执行示例指令；ClickGUI 的 Misc 分类里能看到 **Example Ticker**。
+3. 游戏内执行 `;addons` 查看已加载插件，`;exampleaddon` 执行示例指令；ClickGUI 的 Example（示例）分类里能看到 **Example Ticker**。
 4. 模块状态写入 `evernight/modules.json`，示例配置写入 `evernight/exampleaddon.json`。
 
 ## 发布
@@ -116,6 +117,7 @@ python scripts/check-lang.py     # 语言表键集/前缀校验（CI 也会执�
 
 ## 下一步
 
+- 加自定义分类：`context.registerCategory("MyCategory")`，把返回的 `ModuleCategory` 传给模块构造器，并在两份语言表里写 `addons.<id>.names.categories.MyCategory`。
 - 加 HUD 组件：模块改为继承 `HudWidgetModule`，并在 `onInitialize` 里用 `registerHudModule(...)` 注册。
 - 加独立状态文件：实现 `JsonConfigurable`（参考 `ExampleConfig`）并调用 `context.registerConfig(...)`。
 - 加 Mixin：在插件的 `fabric.mod.json` 里声明自己的 mixin 配置，本体的清单不会代管插件。

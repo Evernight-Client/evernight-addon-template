@@ -2,6 +2,7 @@ package com.example.exampleaddon;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import evernight.client.commands.Command;
+import evernight.client.render.text.Translations;
 import evernight.client.utils.chat.ChatUtils;
 import net.minecraft.network.chat.Component;
 
@@ -27,9 +28,12 @@ public final class ExampleCommand extends Command {
     public void exec(LiteralArgumentBuilder root) {
         com.mojang.brigadier.Command action = context -> {
             ChatUtils.printChat(Component.literal(this.config.greeting()), ChatUtils.DEFAULT_SIGNATURE);
-            ChatUtils.printChat(Component.literal("ExampleTicker is "
-                            + (this.module.isToggled() ? "on" : "off")
-                            + ", interval " + this.module.intervalTicks() + " ticks."),
+            String state = Translations.get(this.module.isToggled()
+                    ? "addons.exampleaddon.commands.On"
+                    : "addons.exampleaddon.commands.Off");
+            ChatUtils.printChat(Component.literal(String.format(
+                            Translations.get("addons.exampleaddon.commands.Status"),
+                            state, this.module.intervalTicks())),
                     ChatUtils.DEFAULT_SIGNATURE);
             return 1;
         };

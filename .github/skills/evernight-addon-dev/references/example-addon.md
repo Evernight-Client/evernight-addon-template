@@ -20,7 +20,8 @@ public final class ExampleAddon extends EvernightAddon {
     @Override
     public void onInitialize(AddonContext context) {
         this.config = new ExampleConfig();
-        ExampleModule module = context.registerModule(new ExampleModule());
+        ModuleCategory exampleCategory = context.registerCategory("Example");
+        ExampleModule module = context.registerModule(new ExampleModule(exampleCategory));
         context.registerConfig(this.config);
         context.registerCommand(new ExampleCommand(module, this.config));
     }
@@ -43,7 +44,7 @@ public final class ExampleAddon extends EvernightAddon {
     "minecraft": "1.21.11",
     "java": ">=21",
     "fabric-api": "*",
-    "evernight": ">=1.0.1"
+    "evernight": ">=1.0.3"
   }
 }
 ```
@@ -56,12 +57,14 @@ public final class ExampleAddon extends EvernightAddon {
 
 | 键 | 用途 |
 | --- | --- |
+| `addons.exampleaddon.names.categories.Example` | 自定义分类显示名 |
 | `addons.exampleaddon.names.modules.ExampleTicker` | 模块显示名 |
 | `addons.exampleaddon.descriptions.modules.ExampleTicker` | 模块描述 |
 | `addons.exampleaddon.names.settings.Announce` / `...Interval` | 设置标签 |
 | `addons.exampleaddon.announce` | 私有文案（`Translations.get`） |
+| `addons.exampleaddon.commands.On` / `...Off` / `...Status` | 指令状态文案 |
 
-`AddonModule` 按约定自动读取前四类键；缺键时回退英文标识，不会把完整键显示到界面。
+`AddonModule` 按约定自动读取前几类键；查找链为「当前语言 → 英文 → 完整键」：中文缺键回退英文，两份都缺才显示完整键。构造器的 `description` 参数仅为源码兼容保留，不再作为显示兜底。
 
 ## 依赖
 

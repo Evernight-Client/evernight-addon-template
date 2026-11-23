@@ -17,16 +17,17 @@ import net.minecraft.network.chat.Component;
  * <p>模块名（{@code ExampleTicker}）是全局键：modules.json 的配置键、预设键和
  * {@code ;exampleticker} 指令都由它生成，发布后不要改名，也不能与其他插件重名。
  * 模块名、描述与设置标签分别读取 {@code addons.exampleaddon.names.modules.*}、
- * {@code addons.exampleaddon.descriptions.modules.*} 与 {@code addons.exampleaddon.names.settings.*}。
+ * {@code addons.exampleaddon.descriptions.modules.*} 与 {@code addons.exampleaddon.names.settings.*}；
+ * 查找链为当前语言 → 英文 → 完整键。构造器的 {@code category} 由入口传进来（示例注册了自定义分类
+ * {@code Example}），{@code description} 参数仅为源码兼容保留，显示描述以语言表为准。
  */
 public final class ExampleModule extends AddonModule {
     private final Setting<Boolean> announceSetting;
     private final Setting<Integer> intervalSetting;
     private int ticks;
 
-    public ExampleModule() {
-        super("exampleaddon", "ExampleTicker", "Prints a chat message on an interval.",
-                ModuleCategory.MISC);
+    public ExampleModule(ModuleCategory category) {
+        super("exampleaddon", "ExampleTicker", "Prints a chat message on an interval.", category);
         this.announceSetting = this.add(new BooleanSetting("Announce", true));
         this.intervalSetting = this.add(
                 new NumberSetting<Integer>("Interval", 100, 20, 1200).dependsOn(this.announceSetting));

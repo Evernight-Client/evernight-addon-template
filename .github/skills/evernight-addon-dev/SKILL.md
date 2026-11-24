@@ -25,6 +25,7 @@ description: 在 Evernight 插件模板仓库中开发插件（Addon）的完整
 
 | 要做的事 | 读 |
 | --- | --- |
+| 从 Meteor（彗星）移植模块或插件 | `.github/skills/meteor-to-evernight-port/SKILL.md` |
 | 示例文件怎么组织、每个类负责什么 | `references/example-addon.md`，以及仓库里真实的 `src/main/java/com/example/exampleaddon/` |
 | AddonContext / EvernightAddon 精确签名 | `references/api.md` |
 | 模块基类、设置类型、HUD 组件 | 上游 `docs/addons.md` 与上游 README |

@@ -7,7 +7,7 @@ Evernight 插件（Addon）模板：一个可以直接构建、加载的 Fabric 
 - 目标版本：Evernight 1.0.3 · Minecraft 1.21.11 · Fabric Loader 0.20.1 · Java 21
 - 构建工具：Gradle Wrapper 9.8.0 + Loom 1.18.4，运行 Gradle 需要 JDK 25
 - 模板自带：示例模块 + 示例指令 + 示例配置 + 中英语言表 + 语言表校验脚本 + GitHub Actions
-- 自带 agent skill（`.github/skills/evernight-addon-dev/`）与 `AGENTS.md`，让编码代理按插件约定工作
+- 自带 agent skill：`.github/skills/evernight-addon-dev/`（插件开发约定）与 `.github/skills/meteor-to-evernight-port/`（从 Meteor/彗星移植模块与插件），配合 `AGENTS.md` 让编码代理按约定工作
 - 示例演示注册**插件自定义分类**（`context.registerCategory("Example")`），模块落在 ClickGUI 的 Example（示例）分类
 
 ## 快速开始
@@ -118,6 +118,7 @@ python scripts/check-lang.py     # 语言表键集/前缀校验（CI 也会执�
 ## 下一步
 
 - 加自定义分类：`context.registerCategory("MyCategory")`，把返回的 `ModuleCategory` 传给模块构造器，并在两份语言表里写 `addons.<id>.names.categories.MyCategory`。
+- 想直接搬 Meteor（彗星）的模块：按 [移植 skill](.github/skills/meteor-to-evernight-port/SKILL.md) 走一遍（查重 → 事件映射 → 语言表 → 构建验收）。
 - 加 HUD 组件：模块改为继承 `HudWidgetModule`，并在 `onInitialize` 里用 `registerHudModule(...)` 注册。
 - 加独立状态文件：实现 `JsonConfigurable`（参考 `ExampleConfig`）并调用 `context.registerConfig(...)`。
 - 加 Mixin：在插件的 `fabric.mod.json` 里声明自己的 mixin 配置，本体的清单不会代管插件。
@@ -127,6 +128,7 @@ python scripts/check-lang.py     # 语言表键集/前缀校验（CI 也会执�
 - [Evernight 插件开发指南](https://github.com/Evernight-Client/Evernight/blob/main/docs/addons.md)
 - [插件 API 源码](https://github.com/Evernight-Client/Evernight/tree/main/src/main/java/evernight/addon)
 - [本仓库的插件开发 skill](.github/skills/evernight-addon-dev/SKILL.md)
+- [本仓库的 Meteor 移植 skill](.github/skills/meteor-to-evernight-port/SKILL.md)
 - [Evernight 本体仓库](https://github.com/Evernight-Client/Evernight)
 
 ## 许可

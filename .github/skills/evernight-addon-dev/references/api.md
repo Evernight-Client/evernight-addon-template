@@ -148,7 +148,7 @@ Minecraft.destroy()
 
 ## 3. 模块与指令的注册细节
 
-- `registerModule` 使用 `ModuleRegistry.registerModule`，它会拒绝被 `ExperimentalFeatures` 隐藏的类、清理隐藏设置；插件注册的重名模块返回 `false`。
+- `registerModule` 使用 `ModuleRegistry.registerModule`；插件注册的重名模块返回 `false`，`AddonContext` 随即抛 `IllegalStateException`。
 - 注册成功后调用 `CommandRegistry.registerModuleAliasCommands(module)`：为模块的每个别名注册 `;<alias>`，若已存在同名指令则跳过。
 - 模块的 `@EventHandler` 由 `Module.enable()` 自动订阅；不要再用 `context.subscribe(module)`，否则会重复触发。
 - 模块分类是 final class：内置 8 类可直接复用，插件可用 `context.registerCategory("X")` 新增并在 `onInitialize` 内传给模块构造器；分类名全局唯一（含内置、大小写不敏感），空白/重名抛 `IllegalStateException`，插件记为 `FAILED`。

@@ -4,8 +4,8 @@
 
 Evernight 插件（Addon）模板：一个可以直接构建、加载的 Fabric 客户端模组，演示如何通过 `evernight-addon` 入口注册模块、指令、配置与语言表。
 
-- 目标版本：Evernight 1.0.3 · Minecraft 1.21.11 · Fabric Loader 0.20.1 · Java 21
-- 构建工具：Gradle Wrapper 9.8.0 + Loom 1.18.4，运行 Gradle 需要 JDK 25
+- 目标版本：Evernight 1.2.7 · Minecraft 1.21.11 · Fabric Loader 0.20.1 · Java 21
+- 构建工具：Gradle Wrapper 9.9.2 + Loom 1.19.3，运行 Gradle 需要 JDK 25
 - 模板自带：示例模块 + 示例指令 + 示例配置 + 中英语言表 + 语言表校验脚本 + GitHub Actions
 - 自带 agent skill：`.github/skills/evernight-addon-dev/`（插件开发约定）与 `.github/skills/meteor-to-evernight-port/`（从 Meteor/彗星移植模块与插件），配合 `AGENTS.md` 让编码代理按约定工作
 - 示例演示注册**插件自定义分类**（`context.registerCategory("Example")`），模块落在 ClickGUI 的 Example（示例）分类
@@ -32,9 +32,9 @@ gradlew.bat build
 | Minecraft | 1.21.11 |
 | Fabric Loader | 0.20.1（`fabric.mod.json` 声明 `>=0.20.1`） |
 | Fabric API | 0.141.6+1.21.11 |
-| Evernight | 1.0.3 或更高 |
+| Evernight | 1.2.7 或更高 |
 | 运行 Java | 21+ |
-| 构建 JDK | 25（Loom 1.18.4 的 Gradle JVM 要求） |
+| 构建 JDK | 25（Loom 1.19.3 的 Gradle JVM 要求） |
 
 ## 改造成自己的插件
 
@@ -50,7 +50,7 @@ gradlew.bat build
 | `assets/<id>/lang/*.json` | 所有键改成 `addons.<id>.*` |
 | 模块构造器 | 模块名全局唯一，发布后不改 |
 
-约定（摘自 Evernight 的 `docs/addons.md`）：
+约定（与 Evernight 的插件 skill 一致）：
 
 - `environment` 必须是 `client`，入口键必须是 `evernight-addon`，入口类继承 `evernight.addon.EvernightAddon`。
 - 模块名是全局键：`modules.json` 的配置键、预设键、`;<模块名>` 指令都由它生成，**发布后不要改名**，也不能与其他插件重名。
@@ -125,7 +125,7 @@ python scripts/check-lang.py     # 语言表键集/前缀校验（CI 也会执�
 
 ## 参考
 
-- [Evernight 插件开发指南](https://github.com/Evernight-Client/Evernight/blob/main/docs/addons.md)
+- [Evernight 插件开发 skill](https://github.com/Evernight-Client/Evernight/blob/main/.github/skills/evernight-addon-dev/SKILL.md)
 - [插件 API 源码](https://github.com/Evernight-Client/Evernight/tree/main/src/main/java/evernight/addon)
 - [本仓库的插件开发 skill](.github/skills/evernight-addon-dev/SKILL.md)
 - [本仓库的 Meteor 移植 skill](.github/skills/meteor-to-evernight-port/SKILL.md)

@@ -44,7 +44,7 @@ public final class ExampleAddon extends EvernightAddon {
     "minecraft": "1.21.11",
     "java": ">=21",
     "fabric-api": "*",
-    "evernight": ">=1.0.3"
+    "evernight": ">=1.2.7"
   }
 }
 ```

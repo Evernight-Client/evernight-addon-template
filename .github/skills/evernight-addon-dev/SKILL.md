@@ -7,7 +7,7 @@ description: 在 Evernight 插件模板仓库中开发插件（Addon）的完整
 
 本仓库是 [Evernight](https://github.com/Evernight-Client/Evernight) 的插件模板：`src/main/java/com/example/exampleaddon/` 是一份可以直接构建、加载的示例插件，把 `exampleaddon` / `com.example.exampleaddon` 换成自己的标识即可开工。
 
-本 skill 记录**写插件时要遵守什么、调哪个 API、怎么验收**。Evernight 本体代码不在本仓库，API 定义以上游 [src/main/java/evernight/addon](https://github.com/Evernight-Client/Evernight/tree/main/src/main/java/evernight/addon) 与 [docs/addons.md](https://github.com/Evernight-Client/Evernight/blob/main/docs/addons.md) 为准。
+本 skill 记录**写插件时要遵守什么、调哪个 API、怎么验收**。Evernight 本体代码不在本仓库，API 定义以上游 [src/main/java/evernight/addon](https://github.com/Evernight-Client/Evernight/tree/main/src/main/java/evernight/addon) 与本技能 `references/api.md` 为准。
 
 ## 目录
 
@@ -28,7 +28,7 @@ description: 在 Evernight 插件模板仓库中开发插件（Addon）的完整
 | 从 Meteor（彗星）移植模块或插件 | `.github/skills/meteor-to-evernight-port/SKILL.md` |
 | 示例文件怎么组织、每个类负责什么 | `references/example-addon.md`，以及仓库里真实的 `src/main/java/com/example/exampleaddon/` |
 | AddonContext / EvernightAddon 精确签名 | `references/api.md` |
-| 模块基类、设置类型、HUD 组件 | 上游 `docs/addons.md` 与上游 README |
+| 模块基类、设置类型、HUD 组件 | 上游 [evernight-dev skill](https://github.com/Evernight-Client/Evernight/tree/main/.github/skills/evernight-dev) 与上游 README |
 | 语言表规则与校验 | 本 skill §6、`scripts/check-lang.py` |
 | 依赖与构建 | 本 skill §3、`build.gradle` |
 
@@ -36,7 +36,7 @@ description: 在 Evernight 插件模板仓库中开发插件（Addon）的完整
 
 1. **入口键只能是 `evernight-addon`**，入口类是 `evernight.addon.EvernightAddon` 的子类，`fabric.mod.json` 的 `environment` 必须是 `client`。
 2. **模块名全局唯一**：`new Module("Name", ...)` 的 `Name` 同时是配置键、预设键、指令别名来源，发布后不能改名。重名会让整个插件初始化失败。
-3. **玩家可见文本走语言表，键只用 `addons.<mod id>.*`**：`assets/<mod id>/lang/en_us.json` 与 `zh_cn.json` 键集一致；**不要用 `evernight.` 开头**，那是本体保留命名空间。
+3. **玩家可见文本走语言表，键只用 `addons.<mod id>.*`**：`assets/<mod id>/lang/en_us.json` 与 `zh_cn.json` 键集一致；**不要用 `evernight.` 开头**，那是本体保留命名空间。唯一例外是设置 tooltip：`SettingComponent` 固定查 `evernight.descriptions.settings.<模块>.<设置 configName>`，`AddonModule` 没有 addons 侧 tooltip 键；需要 tooltip 就按本体键补，否则界面会显示完整键。
 4. **只注册、不硬塞**：模块、指令、配置、语言都通过 `AddonContext` 注册；不要直接操作 `ModuleRegistry.entries`、`CommandDispatcher` 内部结构。
 5. **初始化后不改结构**：`onInitialize` 负责一次性注册；运行期动态增删模块/指令不受支持（配置与设置值可以随时改）。
 
@@ -58,7 +58,7 @@ src/main/resources/
 
 **必须用发行 jar**：`build/devlibs/evernight-<version>-dev.jar` 的 access widener 头是 `named`，交给 `mod*` 配置会被 Loom 按 intermediary 处理，构建报 `Namespace mismatch, expected intermediary got named`。
 
-Loom 1.18.4 要求 Gradle 跑在 **JDK 25** 上；`options.release = 21` 让产物仍是 Java 21 字节码。
+Loom 1.19.3 要求 Gradle 跑在 **JDK 25** 上；`options.release = 21` 让产物仍是 Java 21 字节码。
 
 ## 4. AddonContext 速查
 
@@ -103,6 +103,7 @@ public final class ExampleModule extends AddonModule {
 - 分类：内置分类（`ModuleCategory.COMBAT` … `HUD`）可直接复用；需要新分类时在 `onInitialize` 调用 `context.registerCategory("Example")`，把返回的 `ModuleCategory` 传给 `AddonModule` 构造器。分类只能在 `onInitialize` 注册，名字全局唯一（含内置分类、大小写不敏感），发布后不要改名；显示名写入两份语言表的 `addons.<id>.names.categories.<Name>`。
 - 设置链式方法返回 `Setting<T>`；先建变量再 `this.add(...)`，不要声明成 `NumberSetting`。
 - HUD 组件继承 `HudWidgetModule`、构造器里 `setRenderer(...)`，再用 `registerHudModule`。
+- 模块整块依赖可选模组时构造器调 `requiresMod("modid", ...)`，平台能力不足用 `requiresPlatform(boolean)`（都继承自 `Module`）：缺失时模块仍注册、配置保留，但 ClickGUI/搜索/补全/`;<alias>` 隐藏且拒绝启用。可选模组类不要出现在字段类型、`implements` 或 `@EventHandler` 签名里。
 - 辅助对象订阅事件用 `context.subscribe(obj)`，关闭时自动退订；模块不要重复订阅。
 
 ## 6. 指令 / 语言 / 配置
@@ -110,8 +111,9 @@ public final class ExampleModule extends AddonModule {
 - 指令继承 `Command`，`exec(LiteralArgumentBuilder root)` 里 `root.executes(action)`；别名用 `setAliases(...)`。指令名不要和模块名/模块别名重复（模块会自动注册同名指令）。
 - 语言：`assets/<id>/lang/en_us.json` + `zh_cn.json`，所有键放 `addons.<id>.*`（**禁止** `evernight.` 前缀）；`AddonModule` 自动读取模块名/描述/设置标签，私有文案用 `Translations.get("addons.<id>.key")`。查找链为当前语言 → 英文 → 完整键：可以只提供 `en_us.json` 让中文界面回退英文，但推荐两份都写；两份都缺会显示完整键。
 - 改完语言表执行 `python scripts/check-lang.py`：校验 JSON、键集一致性、键前缀与占位符数量。
-- 模块状态自动进 `modules.json`，HUD 进 `hud.json`；额外状态实现 `JsonConfigurable` 后 `context.registerConfig(...)`，文件名带插件 id（参考 `ExampleConfig`）。
+- 模块状态自动进 `modules.json`，HUD 进 `hud.json`；额外状态实现 `JsonConfigurable` 后 `context.registerConfig(...)`，文件名带插件 id（参考 `ExampleConfig`）。**在 `onInitialize` 里注册会读盘恢复**（暂存后在 `configuration.load()` 前注册）；初始化完成后再注册只影响下次保存，不会读回已有文件。
 - 关闭时不要自己反注册模块；只清理线程/连接/监听器。
+- `;reload` 只重载资源（shader/音效/贴图/目录），**不会重读 `modules.json` 或插件配置**；改配置后需要重启客户端。
 
 ## 7. 构建与联调
 
@@ -133,6 +135,7 @@ python scripts/check-lang.py            # 语言表校验，0 error 才算过
 | `Namespace mismatch, expected intermediary got named` | 把 `build/devlibs` 的 `-dev.jar` 交给了 `modImplementation`；改用发行 jar |
 | `NoClassDefFoundError: evernight/...` | 运行环境没有装对应版本的 Evernight，或 `depends.evernight` 写错 |
 | 插件 FAILED，日志有 `Module name is already registered` | 模块名重名；改名后重试 |
+| 插件 FAILED，日志有 `belongs to addon ... not ...` | `AddonModule` 构造器第一个参数与当前 `fabric.mod.json` 的 id 不一致（抛 `IllegalArgumentException`） |
 | ClickGUI 有模块但无法开关 | 模块构造器抛异常/未注册；看 `Addon <id> failed` 堆栈 |
 | 语言不生效 | 资源路径的命名空间是否等于 `fabric.mod.json` 的 id；两份 JSON 键集是否一致 |
 | 设置不落盘 | 设置是否走 `this.add(...)`；是否 `setExcludedFromConfig(true)` |

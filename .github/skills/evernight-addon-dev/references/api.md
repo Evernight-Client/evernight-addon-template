@@ -1,6 +1,6 @@
 # Evernight 插件 API 参考
 
-本模板链接的 API 版本是 Evernight 1.0.3，源码在上游仓库 `src/main/java/evernight/addon/`。行号随重构会变，以类/方法签名为准。
+本模板链接的 API 版本是 **Evernight 1.2.7**；API 源码在上游仓库 `src/main/java/evernight/addon/`。行号随重构会变，以类/方法签名为准。
 
 ## 1. 公共类型
 
@@ -53,7 +53,7 @@ public record AddonInfo(AddonMetadata metadata, Status status, String error,
 | `<T extends HudWidgetModule> T registerHudModule(T module)` | 与 `registerModule` 完全等价 |
 | `ModuleCategory registerCategory(String name)` | 注册新的模块分类并返回 `ModuleCategory`，供 `AddonModule` 构造器使用；名字全局唯一（含内置、大小写不敏感），空白/重名抛 `IllegalStateException`；显示键为 `addons.<id>.names.categories.<name>`，中文缺键回退英文，两份都缺显示完整键 |
 | `<T extends Command> T registerCommand(T command)` | 注册 Brigadier 指令；重复注册返回失败时抛 `IllegalStateException` |
-| `void registerConfig(JsonConfigurable configurable)` | `ConfigurationManager` 未创建时暂存，初始化后自动注册并读盘 |
+| `void registerConfig(JsonConfigurable configurable)` | `onInitialize` 期注册会被暂存，`ConfigurationManager` 建好后、`load()` 前注册并读盘；初始化完成后再注册只影响下次保存，不读回已有文件 |
 | `void subscribe(Object subscriber)` | 订阅 `@EventHandler` 并记录，关闭时自动退订 |
 | `void unsubscribe(Object subscriber)` | 手动退订并移除记录 |
 | `void registerLanguage(String languageCode, InputStream input)` | 解析并合并语言表；`input` 由调用方关闭 |
@@ -88,11 +88,20 @@ public String translationKey(String key);   // "addons." + addonId + "." + key
 @Override public String getDisplayName();   // addons.<id>.names.modules.<Name>
 @Override public String getDescription();   // addons.<id>.descriptions.modules.<Name>
 @Override public <S extends Setting<?>> S add(S setting); // 自动设置标签键
+@Override public <S extends Setting<?>> S add(S setting, Setting<?> precedingSetting); // 同上
+// 以下继承自 Module，不在 AddonModule 覆写：
+protected final void requiresMod(String... modIds);      // 整块依赖可选模组
+protected final void requiresPlatform(boolean supported); // 平台能力依赖
+public boolean isAvailable();                            // 依赖是否满足
 ```
+
+- `add(setting, precedingSetting)` 同样会写入插件命名空间标签键（`AddonModule` 覆写）。
 
 - 显示文本查找链固定为「当前语言 → 英文 → 完整键」：中文缺键回退英文，两份都缺才把完整 key 显示到界面。构造器的 `description` 参数仅为源码兼容保留，不再作为显示兜底。
 - 设置标签由 `add` 写入 `Setting#setDisplayNameKey`，解析 `addons.<id>.names.settings.<SettingName>`；设置 tooltip 仍走本体的 `evernight.descriptions.settings.*` 逻辑。
-- `AddonContext.registerModule` 会校验模块声明的 addon id 与当前插件一致，不一致直接抛 `IllegalArgumentException`。
+- `AddonContext.registerModule` 对 `AddonModule` 会校验其 addon id 与当前插件一致，不一致直接抛 `IllegalArgumentException`（普通 `Module` 不校验）。
+- 插件模块整块依赖某个可选模组时，在构造器调 `requiresMod("modid", ...)`（任一 id 加载即算可用）：模块仍注册、配置保留，但 ClickGUI、搜索、模块名补全与 `;<alias>` 隐藏，`enable()` 拒绝启用。单个设置依赖可选模组用 `Setting#hideUnlessModLoaded(String...)`。
+- 可选模组的类不要写进模块字段类型、`implements` 列表或 `@EventHandler` 方法签名：模块 `enable()` 时事件总线会用 `getDeclaredMethods()` 扫描 handler 并解析参数类型，字段/父类类型在构造或首次触碰时加载，缺模组即 `NoClassDefFoundError`。需要能力时走 `ClientContext.baritoneBridge` 等桥接。
 
 ### `ModuleCategory`（final，implements NamedEntry）
 
@@ -151,7 +160,7 @@ Minecraft.destroy()
 - `registerModule` 使用 `ModuleRegistry.registerModule`；插件注册的重名模块返回 `false`，`AddonContext` 随即抛 `IllegalStateException`。
 - 注册成功后调用 `CommandRegistry.registerModuleAliasCommands(module)`：为模块的每个别名注册 `;<alias>`，若已存在同名指令则跳过。
 - 模块的 `@EventHandler` 由 `Module.enable()` 自动订阅；不要再用 `context.subscribe(module)`，否则会重复触发。
-- 模块分类是 final class：内置 8 类可直接复用，插件可用 `context.registerCategory("X")` 新增并在 `onInitialize` 内传给模块构造器；分类名全局唯一（含内置、大小写不敏感），空白/重名抛 `IllegalStateException`，插件记为 `FAILED`。
+- 模块分类是 final class：内置 9 类可直接复用，插件可用 `context.registerCategory("X")` 新增并在 `onInitialize` 内传给模块构造器；分类名全局唯一（含内置、大小写不敏感），空白/重名抛 `IllegalStateException`，插件记为 `FAILED`。
 - `CommandRegistry.registerCommand` 会同时注册 `getAliases()`；指令名保持小写英文。
 
 ## 4. 语言 overlay
@@ -159,6 +168,7 @@ Minecraft.destroy()
 - 文件：`assets/<addon id>/lang/en_us.json`、`zh_cn.json`，UTF-8 扁平 JSON。
 - `AddonManager` 在 `onInitialize` 前自动调用 `loadLanguageFiles()`；缺失文件静默跳过。
 - `LanguageTable` 以 `(sourceId, languageCode)` 为键保存 overlay；`load(stream, code)` 换语言后自动重新叠加。
+- `LanguageTable.getTranslationFor(key, code)` 可读取**指定语言**的文案（含 overlay）。ClickGUI 搜索**不会**用它读插件 `addons.*`：`SearchNames.forModule` 固定查 `evernight.names.modules.<Name>`，只额外收集 `module.getDisplayName()`（当前语言）。因此英文模式可匹配模块名/别名，中文界面下中文模式可匹配插件中文显示名与拼音；跨语言不覆盖。
 - overlay 在基础表之后应用，因此插件键会覆盖同名本体键（不建议覆盖本体键）。
 - 本体键统一在 `evernight.` 命名空间，**插件不得使用**；插件所有键（模块名、描述、设置标签、私有文案）都放 `addons.<id>.*`。
 - `AddonModule` 自动读取 `addons.<id>.names.modules.*` / `addons.<id>.descriptions.modules.*` / `addons.<id>.names.settings.*`；其他文案用 `Translations.get("addons.<id>.xxx")`。
@@ -168,13 +178,13 @@ Minecraft.destroy()
 ## 5. 配置
 
 - `JsonConfigurable` 契约：`JsonElement toJson()`、`void fromJson(JsonElement)`、`String getConfigName()`（默认空串，必须覆写）。
-- `registerConfig` 在 `ConfigurationManager` 已存在时立即注册；文件在下次 `save()` 写入，但**不会**在注册后自动读盘。
+- `registerConfig` 在 `onInitialize` 里调用最可靠：`ConfigurationManager` 尚未创建时先暂存，随后在 `configuration.load()` 之前注册，因此会读盘恢复；初始化完成后再注册只影响下次 `save()` 写入，不会读回已有文件。
 - 配置文件统一位于 `evernight/`，文件名必须唯一；建议 `<id>.json`。
 - 插件自己的资源/缓存放 `dataDirectory()`，不要污染配置目录根部。
 
 ## 6. 兼容性与限制
 
 - 插件 API 面向二进制兼容；新增方法优先用 `default`/重载，删除或改签名视为破坏性变更。
-- 不支持热卸载/热重载插件；重载配置（`;reload`）只重读配置源。
+- 不支持热卸载/热重载插件；`;reload` 只重载资源（shader/音效/贴图/目录），不会重读 `modules.json` 或插件配置，改配置需重启。
 - 插件可以使用本体公开 API，但不保证私有字段/内部实现稳定；不要用反射改本体状态。
 - Fabric 的 mixin 属于插件自己：插件 `fabric.mod.json` 声明自己的 mixin 文件，本体不代管。
